@@ -1,0 +1,32 @@
+XTCPgps is a plugin for X-Plane. Based on Ed Park's XMAPgps, It sends these NMEA sentences
+over a TCP connection to mapping software: GPRMC, GPGGA, dummy GPGSA.
+
+Demonstrated to work with XCsoar 6.1 running on a Android 2.2 and 
+with XCsoar running on a Linux desktop.  
+
+
+Pre-requests:
+- Installed X-Plane 9 
+- Installed python 2.5
+
+
+Stage 1:
+Install Python 2.5 plugin framework for X-Plane, from
+http://www.xpluginsdk.org/downloads/sdk200_older_versions/PythonInterface25.zip
+Unzip into X-Plane/Resources/plugins/PythonInterface25.xpl
+
+Create X-Plane/Resources/plugins/PythonScripts dir.
+copy PI_XTCPgps.py to X-Plane/Resources/plugins/PythonScripts
+
+Stage 2:
+Edit X-Plane/Resources/plugins/PythonScripts/PI_XTCPgps.py on line 39, 
+set Host and Port for your NMEA client.
+
+Stage 3:
+Start your NMEA client, Start X-Plane.
+
+
+If nothing happens make sure the plugins are enabled in X-plane -> plugins
+
+
+
