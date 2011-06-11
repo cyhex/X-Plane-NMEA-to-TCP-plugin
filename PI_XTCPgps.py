@@ -75,7 +75,7 @@ class PythonInterface:
 			self.LineCount = 0
 			try:
 				self.ser = SocketPlugin()
-			except Exception e:
+			except Exception, e:
 				self.OutputFile.write("Exception opening socket %s" % e)
 	
 			# test if self.ser is writable
