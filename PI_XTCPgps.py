@@ -52,7 +52,7 @@ class SocketPlugin(object):
                 self.s.connect(self.HOST)
                 self.connected = True
             except Exception, e :
-                if c > 1000:
+               if c > 1000:
                     raise e
                 
                self.connected = False
