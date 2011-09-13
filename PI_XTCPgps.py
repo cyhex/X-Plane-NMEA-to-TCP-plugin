@@ -1,6 +1,6 @@
 """
 PI_XTCPgps.py version 0.1 beta 1
-copyright (c) 2009 Timor@cyhex.com; released under GPL 2.0 or later
+copyright (c) 2009 Timor at cyhex; released under GPL 2.0 or later
 
 XTCPgps is a plugin for X-Plane. Based on Ed Park's XMAPgps, It sends these NMEA sentences
 over a TCP connection to mapping software: GPRMC, GPGGA, dummy GPGSA.
