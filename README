@@ -1,8 +1,8 @@
 XTCPgps is a plugin for X-Plane. Based on Ed Park's XMAPgps, It sends NMEA sentences
 over TCP connection to mapping software: GPRMC, GPGGA, dummy GPGSA.
 
-Demonstrated to work with XCSoar 6.1 running on a Android 2.2 and 
-with XCSoar running on a Linux desktop.  
+Demonstrated to work with XCSoar 6.1 running on Android, 
+XCSoar running on a Linux and Jeppesen's FlightDeck running in Parallels Windows 7.  
 
 
 Pre-requests:
