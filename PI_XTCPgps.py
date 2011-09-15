@@ -20,7 +20,9 @@ import time
 import sys
 import threading
 import socket
+import os
 
+OutputFile = open(os.path.join(XPLMGetSystemPath(),'Resources','plugins','PythonScripts','XTCPgps.txt'), 'w')
 
 def cksum(sentence):
     """calculates checksum for NMEA sentences"""
@@ -40,33 +42,28 @@ class SocketPlugin(object):
     connected = False
     
     def __init__(self):
-        self._connect()
+        self.connect()
+        
     
-    def _connect(self):
-        c = 0
-        while True:
-            
-            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            
-            try:
-                self.s.connect(self.HOST)
-                self.connected = True
-            except Exception, e :
-               if c > 1000:
-                    raise e
-                
-               self.connected = False
-               c += 1
-               time.sleep(1)
-            
-            if self.connected:
-                break
+    def connect(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        try:
+            self.s.connect(self.HOST)
+            self.connected = True
+        except Exception, e:
+            OutputFile.write(" Can not connect to NMEA Client on %s:%s %s \n" % (self.HOST[0],self.HOST[1], e))
+            OutputFile.flush()
+            self.connected = False
+        
+        
+        
                
             
                 
     def write(self,data):
         if not self.connected:
-            self._connect()
+            self.connect()
                 
         try:
             self.s.send(data)
@@ -84,11 +81,11 @@ class PythonInterface:
     
             # For possible debugging use:
             # Open a file to write to, located in the same directory as this plugin.
-            self.outputPath = XPLMGetSystemPath() + "/Resources/plugins/PythonScripts/XTCPgps.txt"
-            self.OutputFile = open(self.outputPath, 'w')
+            self.OutputFile = OutputFile
             self.LineCount = 0
             self.ser = SocketPlugin()
-    
+            
+            
             # test if self.ser is writable
             test_thread = threading.Thread(target=self.ser.write, args=("HELLO?",))
             before_count = threading.activeCount()
