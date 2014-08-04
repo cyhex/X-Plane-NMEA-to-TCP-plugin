@@ -8,6 +8,8 @@ over a TCP connection to mapping software: GPRMC, GPGGA, dummy GPGSA.
 Demonstrated to work with XCsoar 6.1 running on a Android 2.2 and 
 with XCsoar running on a Linux desktop.  
 
+Alex Ferrer 2014: added LXWP0 NMEA sentence so Xsoar (for use with Xcsoar condor driver) 
+                  can take advantage of vario, IAS and Wind info
 """
 
 from XPLMProcessing import *
@@ -38,7 +40,7 @@ def cksum(sentence):
 
 class SocketPlugin(object):
     #Edit here, yout host and port
-    HOST = ('10.0.0.13',4353)
+    HOST = ('192.168.1.45',4353)
     connected = False
     
     def __init__(self):
@@ -116,6 +118,17 @@ class PythonInterface:
             self.drLat_deg = XPLMFindDataRef("sim/flightmodel/position/latitude")
             self.drLon_deg = XPLMFindDataRef("sim/flightmodel/position/longitude")
             self.drAlt_ind = XPLMFindDataRef("sim/flightmodel/position/elevation")
+
+            # indicated airspeed  
+            self.drIAS_ind = XPLMFindDataRef("sim/flightmodel/position/indicated_airspeed")
+
+            # wind vector currently acting on the plane in KTS
+            self.drWind_dir   = XPLMFindDataRef("sim/cockpit2/gauges/indicators/wind_heading_deg_mag")
+            self.drWind_speed = XPLMFindDataRef("sim/cockpit2/gauges/indicators/wind_speed_kts")
+
+            # barometric pressure
+            self.drBaro_alt = XPLMFindDataRef("sim/flightmodel/misc/h_ind")
+            self.drVario_fpm  = XPLMFindDataRef("sim/cockpit2/gauges/indicators/total_energy_fpm")
     
             # Register our callback for once per 1-second.  Positive intervals
             # are in seconds, negative are the negative of sim frames.  Zero
@@ -156,6 +169,13 @@ class PythonInterface:
             self.Hding_mag = XPLMGetDataf(self.drHding_mag)
             self.Mag_var = XPLMGetDataf(self.drMag_var)
             self.Alt_ind = XPLMGetDatad(self.drAlt_ind)
+            
+            # get values for LXWP0
+            self.IAS      = XPLMGetDataf(self.drIAS_ind)*1.852     # kias -> kph
+            self.Baro_Alt = XPLMGetDataf(self.drBaro_alt)*0.3048   # feet-> meter  
+            self.Vario    = XPLMGetDataf(self.drVario_fpm)*0.00508 # fpm -> m/s
+            self.Wind_Dir = XPLMGetDataf(self.drWind_dir)
+            self.Wind_Speed = XPLMGetDataf(self.drWind_speed)*1.852  # kias -> kph
     
             # put in nmea format (matches x-plane | equipment | nmea serial feed)
             # time ssss.ssss since midnight --> hhmmss
@@ -235,9 +255,49 @@ class PythonInterface:
             # pocketfms requires gpgsa sentence;
             # this one (constant) is what x-plane equipment setting sends.
             gpgsa = "$GPGSA,A,3,13,20,31,,,,,,,,,,02.2,02.2,*1e\r\n"
+      
+    # ----------------- 
+            # alexferrer: add ias and pressure data so xcsoar can work the vario
+            # construct the nmea lwxp0 sentence
+            '''
+                $LXWP0,Y,222.3,1665.5,1.71,,,,,,239,174,10.1 
+                0 loger_stored (Y/N) 
+                1 IAS (kph) 
+                2 baroaltitude (m) 
+                3 vario (m/s) 
+                4-8 unknown 
+                9 heading of plane 
+                10 windcourse (deg) 
+                11 windspeed (kph) 
+            '''
+            n_logger  = 'Y'       # logger stored
+            n_ias     = ('%.1f' % self.IAS).zfill(5)        # kph
+            n_baroalt = '%.1f' % self.Baro_Alt               # m
+            n_vario   = '%.1f' % self.Vario                 # m/s
+            n_dummy   = ',,,,,,'                            # unknown
+                                                            # airplane heading
+            n_winddir = '%.1f' %self.Wind_Dir               # wind direction deg
+            n_windspd = ('%.1f' % self.Wind_Speed).zfill(5) # kph
+                
+            lxwp0 = 'LXWP0'    + ','    \
+                  + n_logger   + ','    \
+                  + n_ias      + ','    \
+                  + n_baroalt  + ','    \
+                  + n_vario    + ','    \
+                  + n_dummy    + ','    \
+                  + n_heading  + ','    \
+                  + n_winddir  + ','    \
+                  + n_windspd
+    
+            # append check sum and inital $
+            cks = cksum(lxwp0)
+            lxwp0 = '$' + lxwp0 + '*' + cks + '\r\n'  
+    # -------------------    
+    # -------------- test only ---------------------- 
+            #print "NMEA> " ,  lxwp0 , n_windspd #gprmc, gpgga, gpgsa,
     
     #        serial write at 4800 baud can take .3 sec, so put in own thread;
-            write_thread = threading.Thread(target=self.ser.write, args=(gprmc + gpgga + gpgsa,))
+            write_thread = threading.Thread(target=self.ser.write, args=(gprmc + gpgga + gpgsa + lxwp0,))
             write_thread.start()
     
     #        self.where = 5
